@@ -15,6 +15,9 @@ const Signup = ({ onLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // 🔍 Debug the API base URL being used
+    console.log("API:", process.env.REACT_APP_API_BASE_URL);
+
     try {
       const res = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/auth/register`, form);
 
