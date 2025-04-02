@@ -30,15 +30,18 @@ const TranslationForm = () => {
     formData.append('file', file);
     formData.append('sourceLang', sourceLang);
     formData.append('targetLang', targetLang);
-
     try {
-      const response = await axios.post('http://localhost:5000/api/upload/file', formData, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_BASE_URL}/api/upload/file`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+    
       const text = response.data.translatedText;
       setTranslatedText(text || '');
     } catch (error) {
