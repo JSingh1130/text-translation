@@ -15,21 +15,31 @@ const TranslationForm = () => {
   const [sourceLang, setSourceLang] = useState('');
   const [targetLang, setTargetLang] = useState('');
   const [translatedText, setTranslatedText] = useState('');
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(false);
   const translatedRef = useRef();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     localStorage.removeItem('token');
-    window.location.href = '/login'; // Ensures full reload and recheck of token
+    window.location.href = '/login';
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (cooldown) {
+      alert('Please wait a few seconds before making another request.');
+      return;
+    }
+
     const formData = new FormData();
     formData.append('file', file);
     formData.append('sourceLang', sourceLang);
     formData.append('targetLang', targetLang);
+
+    setLoading(true);
+    setCooldown(true); // Trigger cooldown
     try {
       const response = await axios.post(
         `${process.env.REACT_APP_API_BASE_URL}/api/upload/file`,
@@ -41,12 +51,15 @@ const TranslationForm = () => {
           },
         }
       );
-    
+
       const text = response.data.translatedText;
       setTranslatedText(text || '');
     } catch (error) {
       console.error('🚨 Translation error:', error.response?.data || error.message);
       alert(error.response?.data?.message || 'Translation failed.');
+    } finally {
+      setLoading(false);
+      setTimeout(() => setCooldown(false), 5000); // 5s cooldown
     }
   };
 
@@ -135,9 +148,14 @@ const TranslationForm = () => {
 
           <button
             type="submit"
-            className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700"
+            disabled={loading || cooldown}
+            className={`w-full py-2 rounded-lg text-white transition ${
+              loading || cooldown
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-indigo-600 hover:bg-indigo-700'
+            }`}
           >
-            Translate
+            {loading ? 'Translating...' : 'Translate'}
           </button>
         </form>
 
