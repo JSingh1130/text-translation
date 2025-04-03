@@ -3,9 +3,11 @@ import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import './spinner.css'; // ✅ Import spinner
 
 const Login = ({ onLogin }) => {
   const [form, setForm] = useState({ email: '', password: '' });
+  const [loading, setLoading] = useState(false); // ✅ Spinner control
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -14,6 +16,8 @@ const Login = ({ onLogin }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true); // Start spinner
+
     try {
       const res = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/auth/login`, form);
       const token = res.data?.token;
@@ -30,12 +34,14 @@ const Login = ({ onLogin }) => {
           theme: 'light',
         });
         onLogin();
-        setTimeout(() => navigate('/'), 5000); // Delay to show toast
+        setTimeout(() => navigate('/'), 1500);
       } else {
         toast.error('Invalid response from server.');
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Login failed');
+    } finally {
+      setLoading(false); // Stop spinner
     }
   };
 
@@ -65,9 +71,10 @@ const Login = ({ onLogin }) => {
           />
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition flex justify-center items-center"
           >
-            Log In
+            {loading ? <div className="spinner"></div> : 'Log In'}
           </button>
         </form>
 
