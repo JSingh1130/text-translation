@@ -1,4 +1,3 @@
-// backend/controllers/authController.js
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -7,11 +6,24 @@ const jwt = require('jsonwebtoken');
 exports.register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
-    
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+
+    console.log("➡️ Register attempt with:", { username, email });
+
+    // Validate input
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    // Check if email already exists
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
+      return res.status(400).json({ message: 'Email is already registered' });
+    }
+
+    // Check if username already exists
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) {
+      return res.status(400).json({ message: 'Username is already taken' });
     }
 
     // Hash password
@@ -22,7 +34,7 @@ exports.register = async (req, res) => {
     const newUser = new User({ username, email, password: hashedPassword });
     await newUser.save();
 
-    // ✅ Generate JWT token
+    // Generate JWT token
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
     res.status(201).json({
@@ -35,6 +47,7 @@ exports.register = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('❌ Registration error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -43,7 +56,14 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+
+    console.log("🔐 Login attempt with:", email);
+
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+
     // Find the user by email
     const user = await User.findOne({ email });
     if (!user) {
@@ -68,6 +88,7 @@ exports.login = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('❌ Login error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
