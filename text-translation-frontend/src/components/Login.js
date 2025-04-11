@@ -46,7 +46,15 @@ const Login = ({ onLogin }) => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 px-4">
+      {/* ✅ Project Intro Section */}
+      <div className="text-center bg-gradient-to-r from-blue-600 to-cyan-500 text-white p-6 rounded-xl shadow-md w-full max-w-xl mb-8">
+        <h1 className="text-3xl font-bold mb-2">🌐 Welcome to TextFlow Translator</h1>
+        <p className="text-base md:text-lg">
+          Break language barriers with ease. Instantly translate your documents and messages across 100+ languages using cutting-edge AI.
+        </p>
+      </div>
+
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h2 className="text-2xl font-bold text-center mb-6">Log In</h2>
 
