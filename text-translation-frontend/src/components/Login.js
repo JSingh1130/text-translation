@@ -53,7 +53,7 @@ const Login = ({ onLogin }) => {
           🌐 Welcome to TextFlow Translator
         </h1>
         <p className="text-gray-600 text-base md:text-lg leading-relaxed">
-          Instantly translate your documents and messages across multiple languages. Powered by intelligent AI, designed for speed and simplicity.
+        Translate your documents and messages across 100+ languages — fast, accurate, and easy to use.
         </p>
       </div>
 
