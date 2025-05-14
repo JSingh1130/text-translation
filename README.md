@@ -58,6 +58,7 @@ RAPIDAPI_KEY=your_api_key
 ```
 
 ### Frontend:
+```bash
 cd ../frontend
 npm install
 npm start
@@ -74,3 +75,4 @@ Translation
 POST /api/translate/text
 
 POST /api/translate/file
+```
