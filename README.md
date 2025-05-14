@@ -57,7 +57,7 @@ JWT_SECRET=your_secret_key
 RAPIDAPI_KEY=your_api_key
 ```
 
-###Frontend:
+### Frontend:
 cd ../frontend
 npm install
 npm start
