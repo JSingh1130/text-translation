@@ -1,4 +1,3 @@
-Here's your updated README with the planned enhancement added:
 
 ---
 
