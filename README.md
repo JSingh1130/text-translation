@@ -15,7 +15,7 @@ A full-stack MERN (MongoDB, Express.js, React, Node.js) application that allows 
 ## 🛠️ Features
 
 * 🌍 Text translation using Microsoft Translator API (via RapidAPI)
-* 📄 Upload plain text files for translation
+* 📄 Upload plain text files or pdf files for translation
 * 🔐 JWT-based login & signup authentication
 * 🧾 Download translated output as PDF (html2pdf.js + Noto Sans Devanagari font)
 * 🖥️ Clean and responsive frontend with React
