@@ -1,140 +1,69 @@
-const pdfParse = require("pdf-parse");
-const axios = require("axios");
-const Translation = require("../models/Translation");
+const path = require("path");
+const fs = require("fs");
+const { exec } = require("child_process");
 
-// POST /api/translate
-exports.translateText = async (req, res) => {
-  try {
-    const { text, sourceLang, targetLang } = req.body;
-
-    if (!text || !sourceLang || !targetLang) {
-      return res.status(400).json({ message: "Missing required fields." });
-    }
-
-    const makeTranslationRequest = async () => {
-      return axios({
-        method: 'POST',
-        url: 'https://translateai.p.rapidapi.com/google/translate/json',
-        headers: {
-          'x-rapidapi-key': process.env.RAPIDAPI_KEY,
-          'x-rapidapi-host': 'translateai.p.rapidapi.com',
-          'Content-Type': 'application/json',
-        },
-        data: {
-          origin_language: sourceLang,
-          target_language: targetLang,
-          json_content: { text },
-        }
-      });
-    };
-
-    let response;
-    try {
-      response = await makeTranslationRequest();
-    } catch (error) {
-      if (error.response?.status === 429) {
-        console.warn("⚠️ Rate limit hit (429). Retrying after 3 seconds...");
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        response = await makeTranslationRequest(); // Retry once
-      } else {
-        throw error;
-      }
-    }
-
-    const translatedText = response.data.translated_json.text;
-
-    // Save to MongoDB
-    await Translation.create({
-      user: req.user.id,
-      originalText: text,
-      translatedText,
-      sourceLang,
-      targetLang,
-    });
-
-    res.json({ translatedText });
-
-  } catch (error) {
-    console.error("❌ Text Translation Error:", error.message);
-    const message = error.response?.status === 429
-      ? "Too many requests. Please wait and try again."
-      : "Text translation failed.";
-    res.status(500).json({ message, error: error.message });
-  }
-};
-
-// GET /api/translate/history
-exports.getHistory = async (req, res) => {
-  try {
-    const history = await Translation.find({ user: req.user.id }).sort({ createdAt: -1 });
-    res.json({ history });
-  } catch (error) {
-    console.error("❌ Fetch History Error:", error.message);
-    res.status(500).json({ message: "Failed to fetch history", error: error.message });
-  }
-};
-
-// POST /api/upload (file translation)
+// POST /api/upload/file
 exports.uploadAndTranslate = async (req, res) => {
   try {
     const file = req.file;
     const { sourceLang, targetLang } = req.body;
 
     if (!file || !sourceLang || !targetLang) {
-      return res.status(400).json({ message: "Missing file or languages." });
+      return res.status(400).json({ message: "Missing file or language fields." });
     }
 
-    let extractedText = "";
+    // Ensure directories
+    const uploadsDir = path.join(__dirname, "..", "uploads");
+    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
 
-    // Extract text from PDF or plain text
-    if (file.mimetype === "application/pdf") {
-      const data = await pdfParse(file.buffer);
-      extractedText = data.text;
-    } else if (file.mimetype === "text/plain") {
-      extractedText = file.buffer.toString("utf-8");
-    } else {
-      return res.status(400).json({ message: "Unsupported file type." });
-    }
+    const filename = path.parse(file.originalname).name + "-" + Date.now();
+    const inputPath = path.join(uploadsDir, `${filename}.pdf`);
+    fs.writeFileSync(inputPath, file.buffer);
 
-    const makeTranslationRequest = async () => {
-      return axios({
-        method: 'POST',
-        url: 'https://translateai.p.rapidapi.com/google/translate/json',
-        headers: {
-          'x-rapidapi-key': process.env.RAPIDAPI_KEY,
-          'x-rapidapi-host': 'translateai.p.rapidapi.com',
-          'Content-Type': 'application/json',
-        },
-        data: {
-          origin_language: sourceLang,
-          target_language: targetLang,
-          json_content: { text: extractedText },
+    // Prepare output file paths
+    const layoutJSON = `python/${filename}-layout.json`;
+    const translatedJSON = `python/${filename}-translated.json`;
+    const translatedPDF = `uploads/${filename}-${targetLang}.pdf`;
+
+    // Step 1: Extract layout from PDF
+    const extractCmd = `python python/extract_pdf.py "${inputPath}" "${layoutJSON}"`;
+
+    // Step 2: Translate extracted layout content
+    const translateCmd = `python python/translate_layout_json.py "${layoutJSON}" "${translatedJSON}" ${sourceLang} ${targetLang}`;
+
+    // Step 3: Build translated PDF
+    const buildCmd = `python python/build_pdf.py "${translatedJSON}" "${translatedPDF}" ${targetLang}`;
+
+    exec(extractCommand, (err, stdout, stderr) => {
+  if (err) {
+    console.error("❌ Layout extraction failed:", stderr);
+    console.error("Full error object:", err);
+    return res.status(500).json({ message: "Layout extraction failed." });
+  }
+
+
+      exec(translateCmd, (err2) => {
+        if (err2) {
+          console.error("❌ Layout Translation Error:", err2.message);
+          return res.status(500).json({ message: "Translation failed." });
         }
+
+        exec(buildCmd, (err3) => {
+          if (err3) {
+            console.error("❌ PDF Build Error:", err3.message);
+            return res.status(500).json({ message: "PDF generation failed." });
+          }
+
+          console.log("✅ Translation completed:", translatedPDF);
+          res.json({
+            message: "Translation complete",
+            pdfUrl: `/uploads/${path.basename(translatedPDF)}`,
+          });
+        });
       });
-    };
-
-    let response;
-    try {
-      response = await makeTranslationRequest();
-    } catch (error) {
-      if (error.response?.status === 429) {
-        console.warn("⚠️ Rate limit hit (429). Retrying after 3 seconds...");
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        response = await makeTranslationRequest(); // Retry once
-      } else {
-        throw error;
-      }
-    }
-
-    const translatedText = response.data.translated_json.text;
-
-    res.json({ translatedText });
-
+    });
   } catch (error) {
-    console.error("❌ File Translation Error:", error.message);
-    const message = error.response?.status === 429
-      ? "Too many requests. Please wait and try again."
-      : "File translation failed.";
-    res.status(500).json({ message, error: error.message });
+    console.error("❌ Unexpected error:", error.message);
+    res.status(500).json({ message: "Unexpected server error", error: error.message });
   }
 };

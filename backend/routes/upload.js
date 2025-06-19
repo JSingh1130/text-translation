@@ -4,9 +4,10 @@ const multer = require("multer");
 const uploadController = require("../controllers/uploadController");
 const auth = require("../middleware/authMiddleware");
 
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
+// Use memory storage to access file.buffer
+const upload = multer({ storage: multer.memoryStorage() });
 
+// Route to handle file upload and trigger translation pipeline
 router.post("/file", auth, upload.single("file"), uploadController.uploadAndTranslate);
 
 module.exports = router;

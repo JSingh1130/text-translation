@@ -1,0 +1,15 @@
+[
+  [
+    {
+      "type": "text",
+      "page": 0,
+      "x": 72,
+      "y": 72,
+      "font": "Calibri",
+      "size": 20,
+      "color": [0, 0, 0],
+      "text": "यह एक हिंदी परीक्षण है।",
+      "is_heading": true
+    }
+  ]
+]

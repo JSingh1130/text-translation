@@ -1,12 +1,15 @@
 const express = require("express");
 const router = express.Router();
-const { translateText, getHistory } = require("../controllers/translationController");
-const verifyToken = require("../middleware/authMiddleware");
+const multer = require("multer");
 
-// POST /api/translate
-router.post("/", verifyToken, translateText);
+const { uploadAndTranslate } = require("../controllers/uploadController");
+const authMiddleware = require("../middleware/authMiddleware");
 
-// ✅ NEW: GET /api/translate/history
-router.get("/history", verifyToken, getHistory);
+const upload = multer({ storage: multer.memoryStorage() });
+
+
+
+// ✅ Layout-preserving translation using existing working controller
+router.post("/pdf-layout", authMiddleware, upload.single("file"), uploadAndTranslate);
 
 module.exports = router;

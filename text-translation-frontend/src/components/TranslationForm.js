@@ -1,7 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import html2pdf from 'html2pdf.js';
 
 const languages = [
   { code: 'en', name: 'English' },
@@ -14,10 +13,9 @@ const TranslationForm = () => {
   const [file, setFile] = useState(null);
   const [sourceLang, setSourceLang] = useState('');
   const [targetLang, setTargetLang] = useState('');
-  const [translatedText, setTranslatedText] = useState('');
+  const [pdfUrl, setPdfUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(false);
-  const translatedRef = useRef();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -39,7 +37,7 @@ const TranslationForm = () => {
     formData.append('targetLang', targetLang);
 
     setLoading(true);
-    setCooldown(true); // Trigger cooldown
+    setCooldown(true);
     try {
       const response = await axios.post(
         `${process.env.REACT_APP_API_BASE_URL}/api/upload/file`,
@@ -52,38 +50,15 @@ const TranslationForm = () => {
         }
       );
 
-      const text = response.data.translatedText;
-      setTranslatedText(text || '');
+      const pdfPath = response.data.pdfUrl;
+      setPdfUrl(pdfPath);
     } catch (error) {
       console.error('🚨 Translation error:', error.response?.data || error.message);
       alert(error.response?.data?.message || 'Translation failed.');
     } finally {
       setLoading(false);
-      setTimeout(() => setCooldown(false), 5000); // 5s cooldown
+      setTimeout(() => setCooldown(false), 5000);
     }
-  };
-
-  const handleDownloadTxt = () => {
-    const blob = new Blob([translatedText], { type: 'text/plain' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'translated.txt';
-    link.click();
-  };
-
-  const handleDownloadPDF = () => {
-    const element = document.createElement('div');
-    element.style.fontFamily = 'Noto Sans Devanagari, Arial, sans-serif';
-    element.style.fontSize = '16px';
-    element.style.padding = '20px';
-    element.innerText = translatedText;
-
-    html2pdf().from(element).set({
-      margin: 1,
-      filename: 'translated.pdf',
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-    }).save();
   };
 
   return (
@@ -159,26 +134,18 @@ const TranslationForm = () => {
           </button>
         </form>
 
-        {translatedText && (
+        {pdfUrl && (
           <div className="mt-6 bg-gray-100 border border-gray-300 rounded-lg p-4">
-            <h3 className="text-lg font-semibold mb-2">Translated Text:</h3>
-            <div ref={translatedRef} className="text-gray-800 whitespace-pre-wrap font-sans">
-              {translatedText}
-            </div>
-            <div className="flex gap-4 mt-4">
-              <button
-                onClick={handleDownloadTxt}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-              >
-                Download .txt
-              </button>
-              <button
-                onClick={handleDownloadPDF}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-              >
-                Download .pdf
-              </button>
-            </div>
+            <h3 className="text-lg font-semibold mb-2">Translated PDF:</h3>
+            <a
+              href={`http://localhost:5000${pdfUrl}`} 
+              download 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              Download PDF
+            </a>
           </div>
         )}
       </div>
